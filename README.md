@@ -1,4 +1,4 @@
-# Milestone 2: Closed Loop Systems
+# Milestone 2: Closed Loop System
 One of the bigger applications of Embedded Systems is the Closed Loop control system. Think about it, from cars to drones to amplifiers and more, this idea of a system being controlled by feedback is found practically everywhere. To begin to understand how these systems operate and what role your microcontroller plays, you will be asked to do three main tasks for this Milestone:
 * ADC/DAC
 * Open Loop System Characterization
