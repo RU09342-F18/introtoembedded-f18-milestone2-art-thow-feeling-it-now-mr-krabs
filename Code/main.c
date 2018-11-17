@@ -4,6 +4,9 @@
 /**
  * main.c
  */
+
+unsigned int setTemp = 20;                          // Initial Set Temp (20 Celcius)
+
 int main(void)
 {
 	WDTCTL = WDTPW | WDTHOLD;	// stop watchdog timer
@@ -38,7 +41,7 @@ int main(void)
     UCA1IE |= UCRXIE;                           // Enable Interrupt on RX
     UCA1IFG &= ~UCRXIFG;                        // Clear Interrupt Flag
 
-    ADC12CTL0 = ADC12SHT02 + ADC12ON;         // Sampling time, ADC12 on
+    ADC12CTL0 = ADC12SHT02 + ADC12ON;           // Sampling time, ADC12 on
       ADC12CTL1 = ADC12SHP;                     // Use sampling timer
       ADC12IE = 0x01;                           // Enable interrupt
       ADC12CTL0 |= ADC12ENC;
@@ -52,7 +55,6 @@ int main(void)
         __bis_SR_register(LPM0_bits + GIE);     // LPM0, ADC12_ISR will force exit
         __no_operation();                       // For debugger
       }
-	return 0;
 }
 
 
@@ -69,6 +71,8 @@ __interrupt void ADC12_ISR(void)
       P1OUT |= BIT0;                        // P1.0 = 1
     else
       P1OUT &= ~BIT0;                       // P1.0 = 0
+
+    //setTemp = ADC12MEM0;                  // This ain't what it do
 
     __bic_SR_register_on_exit(LPM0_bits);   // Exit active CPU
   case  8: break;                           // Vector  8:  ADC12IFG1
@@ -89,14 +93,16 @@ __interrupt void ADC12_ISR(void)
   }
 }
 
-/*
+
 #pragma vector=USCI_A1_VECTOR
 __interrupt void USCI_A1_ISR(void)
 {
-  switch(byte)
+    setTemp = UCA1RXBUF;                        // Might change depending on value sent through uart
+
+  /*switch(byte)
   {
   case 0:
-      size = UCA1RXBUF;                    // Save Packet Size
+      size = UCA1RXBUF;                         // Save Packet Size
       break;                                    // Vector 0 - no interrupt
   case 1:
       TA0CCR1 = UCA1RXBUF;                      // Sets Red PWM
@@ -123,5 +129,6 @@ __interrupt void USCI_A1_ISR(void)
       break;
   }
   byte++;
+  */
 }
-*/
+
