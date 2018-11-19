@@ -45,6 +45,7 @@ int main(void)
     UCA1IE |= UCRXIE;                           // Enable Interrupt on RX
     UCA1IFG &= ~UCRXIFG;                        // Clear Interrupt Flag
 
+    //REFCTL0 = REFON + REFVSEL_2;                // Set Vref to 2.5 V
     ADC12CTL0 = ADC12SHT02 + ADC12ON;           // Sampling time, ADC12 on
     ADC12CTL1 = ADC12SHP;                       // Use sampling timer
     ADC12IE = 0x01;                             // Enable interrupt
@@ -74,23 +75,9 @@ __interrupt void ADC12_ISR(void)
   case  6:                                  // Vector  6:  ADC12IFG0
 
     //float sampleADC = ADC12MEM0;
-    tempTemp = (ADC12MEM0 * (3.3 / 4095) - 0.424) / 0.00625;
+    tempTemp = (ADC12MEM0 * (2.5 / 4095) - 0.424) / 0.00625;
 
     currentTemp = (int)tempTemp;
-
-    if(count >= 1)
-    {
-        break;
-    }
-    else
-    {
-        while(!(UCA1IFG & UCTXIFG));
-        UCA1TXBUF = currentTemp + '0';
-
-        count++;
-    }
-
-
 
     __bic_SR_register_on_exit(LPM0_bits);   // Exit active CPU
   case  8: break;                           // Vector  8:  ADC12IFG1
