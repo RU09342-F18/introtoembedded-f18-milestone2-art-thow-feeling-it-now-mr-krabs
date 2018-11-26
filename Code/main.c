@@ -7,9 +7,17 @@
 
 unsigned int setTemp = 20;                          // Initial Set Temp (20 Celcius)
 unsigned int currentTemp = 0;                       // Current Temp
+float v_in = 0.0;
 float tempTemp;
 
-unsigned int count = 0;
+unsigned char a;
+unsigned char b;
+unsigned char c;
+unsigned int firstDigit;
+unsigned int secondDigit;
+unsigned int thirdDigit;
+int errorTemp = 0;
+
 
 int main(void)
 {
@@ -41,17 +49,17 @@ int main(void)
     UCA1BR0 = 104;
     UCA1BR1 = 0;
     UCA1MCTL |= UCBRS_1 + UCBRF_0;
-    UCA1CTL1 &= ~UCSWRST;                       // **Initialize USCI state machine**
-    UCA1IE |= UCRXIE;                           // Enable Interrupt on RX
-    UCA1IFG &= ~UCRXIFG;                        // Clear Interrupt Flag
+    UCA1CTL1 &= ~UCSWRST;                               // **Initialize USCI state machine**
+    UCA1IE |= UCRXIE;                                   // Enable Interrupt on RX
+    UCA1IFG &= ~UCRXIFG;                                // Clear Interrupt Flag
 
-    //REFCTL0 = REFON + REFVSEL_2;                // Set Vref to 2.5 V
-    ADC12CTL0 = ADC12SHT02 + ADC12ON;           // Sampling time, ADC12 on
-    ADC12CTL1 = ADC12SHP;                       // Use sampling timer
-    ADC12IE = 0x01;                             // Enable interrupt
+    // Voltage Reference
+    ADC12CTL0 = ADC12SHT02 + ADC12ON;         // Sampling time, ADC12 on
+    ADC12CTL1 = ADC12SHP + ADC12DIV_7+ ADC12SSEL_1;                     // Use sampling timer
+    ADC12IE = 0x01;                           // Enable interrupt
     ADC12CTL0 |= ADC12ENC;
-    P6SEL |= 0x01;                              // P6.0 ADC option select
-    P1DIR |= 0x01;                              // P1.0 output
+    P6SEL |= 0x01;                            // P6.0 ADC option select
+    P1DIR |= 0x01;                            // P1.0 output
 
       while (1)
       {
@@ -74,10 +82,42 @@ __interrupt void ADC12_ISR(void)
   case  4: break;                           // Vector  4:  ADC timing overflow
   case  6:                                  // Vector  6:  ADC12IFG0
 
-    //float sampleADC = ADC12MEM0;
-    tempTemp = (ADC12MEM0 * (2.5 / 4095) - 0.424) / 0.00625;
+      // Temperature Calculations
+    v_in = (ADC12MEM0 * 3.3 )/ 4095;
+    tempTemp = (v_in - 0.424) * 160;
 
     currentTemp = (int)tempTemp;
+
+    // TX operations
+    firstDigit = currentTemp % 100;
+
+    a = (currentTemp - firstDigit) / 100;
+
+    secondDigit = firstDigit % 10;
+
+    b = (firstDigit - secondDigit) / 10;
+
+    c = secondDigit;
+
+    if(a != 0)
+    {
+        while(!(UCA1IFG & UCTXIFG));
+                UCA1TXBUF = a + '0';
+            __delay_cycles(1000);
+    }
+    while(!(UCA1IFG & UCTXIFG));
+        UCA1TXBUF = b + '0';
+    __delay_cycles(1000);
+    while(!(UCA1IFG & UCTXIFG));
+        UCA1TXBUF = c + '0';
+    __delay_cycles(1000);
+    while(!(UCA1IFG & UCTXIFG));
+        UCA1TXBUF = 0x0A;
+    __delay_cycles(1000);
+
+    errorTemp = currentTemp - setTemp;
+    TA0CCR1 += errorTemp * 3;
+
 
     __bic_SR_register_on_exit(LPM0_bits);   // Exit active CPU
   case  8: break;                           // Vector  8:  ADC12IFG1
