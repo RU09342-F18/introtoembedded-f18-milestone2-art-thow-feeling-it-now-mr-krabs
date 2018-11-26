@@ -16,7 +16,7 @@ unsigned char c;
 unsigned int firstDigit;
 unsigned int secondDigit;
 unsigned int thirdDigit;
-int errorTemp = 0;
+
 
 
 int main(void)
@@ -25,10 +25,10 @@ int main(void)
 	
 	// Timer A0 Setup
     TA0CTL |= TASSEL_2 + MC_1;                      // Setup Timer A0 in UP mode w/ SMCLK
-    TA0CCR0 = 100;                                  // Set TA0CCR0 to 255
+    TA0CCR0 = 1000;                                  // Set TA0CCR0 to 255
 
     TA0CCTL1 |= OUTMOD_7;                           // Enable Output
-    TA0CCR1 = 50;                                 // Set Duty Cycle to 0%
+    TA0CCR1 = 500;                                 // Set Duty Cycle to 0%
 
     P1OUT |= BIT2;                              // Set Pin 1.2 to High
     P1DIR |= BIT2;                              // Set Pin 1.2 to Output
@@ -110,14 +110,23 @@ __interrupt void ADC12_ISR(void)
     __delay_cycles(1000);
     while(!(UCA1IFG & UCTXIFG));
         UCA1TXBUF = c + '0';
-    __delay_cycles(1000);
+    __delay_cycles(2000);
     while(!(UCA1IFG & UCTXIFG));
-        UCA1TXBUF = 0x0A;
+        UCA1TXBUF = ' ';
     __delay_cycles(1000);
 
-    errorTemp = currentTemp - setTemp;
-    TA0CCR1 += errorTemp * 3;
-
+    if((currentTemp > (setTemp + 2)) && (TA0CCR1 < 1000))
+    {
+        TA0CCR1 = TA0CCR1 + 10;
+        if(TA0CCR1 > 1000)
+            TA0CCR1 = 1000;
+    }
+    else if(currentTemp < (setTemp - 2))
+    {
+        TA0CCR1 = TA0CCR1 - 10;
+        if(TA0CCR1 < 0)
+            TA0CCR1 = 0;
+    }
 
     __bic_SR_register_on_exit(LPM0_bits);   // Exit active CPU
   case  8: break;                           // Vector  8:  ADC12IFG1
