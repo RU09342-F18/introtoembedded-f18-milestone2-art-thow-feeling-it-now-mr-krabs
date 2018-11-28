@@ -28,7 +28,7 @@ int main(void)
     TA0CCR0 = 1000;                                  // Set TA0CCR0 to 255
 
     TA0CCTL1 |= OUTMOD_7;                           // Enable Output
-    TA0CCR1 = 980;                                 // Set Duty Cycle to 0%
+    TA0CCR1 = 500;                                 // Set Duty Cycle to 0%
 
     P1OUT |= BIT2;                              // Set Pin 1.2 to High
     P1DIR |= BIT2;                              // Set Pin 1.2 to Output
@@ -115,17 +115,19 @@ __interrupt void ADC12_ISR(void)
         UCA1TXBUF = ' ';
     __delay_cycles(1000);
 
+    if(TA0CCR1 > 1000)
+        TA0CCR1 = 1000;
+
+    if(TA0CCR1 < 10)
+        TA0CCR1 = 10;
+
     if(currentTemp > (setTemp + 2))
     {
-        TA0CCR1 = TA0CCR1 + 10;
-        if(TA0CCR1 > 1000)
-            TA0CCR1 = 1000;
+        TA0CCR1++;
     }
-    else if(currentTemp < (setTemp - 2))
+    if(currentTemp < (setTemp - 2))
     {
-        TA0CCR1 = TA0CCR1 - 10;
-        if(TA0CCR1 < 10)
-            TA0CCR1 = 0;
+        TA0CCR1--;
     }
 
     __bic_SR_register_on_exit(LPM0_bits);   // Exit active CPU
